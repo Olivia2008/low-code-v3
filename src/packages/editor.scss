@@ -1,0 +1,139 @@
+.editor {
+  width: 100%;
+  height: 100%;
+  &-left,
+  &-right {
+    position: absolute;
+    width: 270px;
+    background: #eee;
+    top: 0;
+    bottom: 0;
+  }
+  &-left {
+    left: 0;
+    &-item {
+      width: 250px;
+      height: 100px;
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      cursor: move;
+      user-select: none;
+      position: relative;
+      > span {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: rgb(96, 205, 224);
+        color: #fff;
+        padding: 4px;
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #eee;
+        opacity: 0.2;
+      }
+    }
+  }
+  &-right {
+    right: 0;
+  }
+  &-top {
+    position: absolute;
+    right: 280px;
+    left: 280px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .editor-top-button {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      user-select: none;
+      cursor: pointer;
+      margin-left: 3px;
+    }
+  }
+  &-container {
+    padding: 80px 270px 0;
+    height: 100%;
+    box-sizing: border-box;
+    &-canvas {
+      overflow: scroll;
+      height: 100%;
+      &_content {
+        margin: 20px auto;
+        background: #eee;
+        position: relative;
+      }
+    }
+  }
+}
+.editor-block {
+  position: absolute;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}
+.editor-block-focus {
+  &::after {
+    border: 1px solid #409eff;
+    border-radius: 4px;
+  }
+}
+.editor-block-preview {
+  &::after {
+    display: none;
+  }
+}
+.line-x {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed #333;
+}
+.line-y {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #333;
+}
+
+// dropdown
+.dropdown {
+  display: none;
+  position: absolute;
+  background: #fff;
+  box-shadow: 2px 2px #ccc;
+}
+.dropdown-isShow {
+  display: block;
+}
+.dropdown-item {
+  line-height: 30px;
+  width: 100px;
+  border-bottom: 1px solid #ccc;
+  text-align: center;
+  user-select: none;
+  cursor: pointer;
+}
