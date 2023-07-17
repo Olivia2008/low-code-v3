@@ -1186,3 +1186,468 @@ const onRightClickMenu = (e, block) => {
   });
 };
 ```
+
+### 字体颜色尺寸控制
+
+#### 1、实现操作栏渲染
+
+**配置文本、按钮**
+
+```js
+// utils/editor-config.js
+registerConfig.register({
+  label: "文本",
+  preview: () => "预览文本",
+  render: () => "渲染文本",
+  key: "text",
+  props: {
+    text: createInputProp("文本内容"),
+    color: createColorProp("字体颜色"),
+    size: createSelectProp("字体大小", [
+      { label: "14px", value: "14px" },
+      { label: "16px", value: "16px" },
+      { label: "18px", value: "18px" },
+    ]),
+  },
+});
+registerConfig.register({
+  label: "按钮",
+  preview: () => <ElButton>预览按钮</ElButton>,
+  render: () => <ElButton>渲染按钮</ElButton>,
+  key: "button",
+  props: {
+    text: createInputProp("按钮内容"),
+    type: createSelectProp("按钮类型", [
+      { label: "基础", value: "primary" },
+      { label: "成功", value: "success" },
+      { label: "警告", value: "warning" },
+      { label: "危险", value: "danger" },
+      { label: "文本", value: "text" },
+    ]),
+    size: createSelectProp("按钮尺寸", [
+      { label: "默认", value: "" },
+      { label: "中等", value: "medium" },
+      { label: "小", value: "small" },
+      { label: "大", value: "large" },
+    ]),
+  },
+});
+```
+
+**渲染父组件**
+
+```js
+// 父组件EditorOperator
+<EditorOperator
+  block={lastSelectBlock.value}
+  data={data.value}></EditorOperator>
+```
+
+**渲染子组件配置**
+
+```js
+// 子组件
+
+export default defineComponent({
+  props: {
+    block: { type: Object },
+    data: { type: Object },
+  },
+  setup: (props) => {
+    const config = inject("config");
+    return () => {
+      let content = [];
+      if (!props.block) {
+        content.push(
+          <>
+            <ElFormItem label="容器宽度">
+              <ElInputNumber></ElInputNumber>
+            </ElFormItem>
+            <ElFormItem label="容器高度">
+              <ElInputNumber></ElInputNumber>
+            </ElFormItem>
+          </>
+        );
+      } else {
+        let component = config.componentMap[props.block.key];
+        if (component && component.props) {
+          content.push(
+            // eslint-disable-next-line no-unused-vars
+            Object.entries(component.props).map(([propName, propConfig]) => {
+              return (
+                <ElFormItem label={propConfig.label}>
+                  {{
+                    input: () => <ElInput></ElInput>,
+                    color: () => <ElColorPicker></ElColorPicker>,
+                    select: () => (
+                      <ElSelect>
+                        {propConfig.options.map((option) => {
+                          return (
+                            <ElOption
+                              label={option.label}
+                              value={option.value}></ElOption>
+                          );
+                        })}
+                      </ElSelect>
+                    ),
+                  }[propConfig.type]()}
+                </ElFormItem>
+              );
+            })
+          );
+        }
+      }
+      return (
+        <ElForm labelPostion="top" style="padding: 30px">
+          {content}
+          <ElFormItem>
+            <ElButton type="primary">应用</ElButton>
+            <ElButton>重置</ElButton>
+          </ElFormItem>
+        </ElForm>
+      );
+    };
+  },
+});
+
+> 注意写法{}是Object
+{
+  input: () => <ElInput></ElInput>
+}input()
+```
+
+#### 2、实现操作栏的属性配置
+
+**配置默认属性**
+
+- 1）宽，高默认(数据双向绑定)
+
+```js
+// 数据双向绑定v-model+reactive
+const state = reactive({
+  editData: {},
+});
+const reset = () => {
+  if (!props.block) {
+    // 绑定data.json中的容器的宽高
+    state.editData = JSON.parse(JSON.stringify(props.data.container));
+  }
+};
+// 及时监听props.block, reset
+watch(() => props.block, reset, { immediate: true });
+
+<ElInputNumber v-model={state.editData.width}></ElInputNumber>;
+```
+
+- 2）拖拽过来的模块配置默认
+
+```js
+// useMenuDragger.js 配置props
+const drop = (e) => {
+  let blocks = data.value.blocks;
+  data.value = {
+    ...data.value,
+    blocks: [
+      ...blocks,
+      {
+        top: e.offsetY,
+        left: e.offsetX,
+        zIndex: 1,
+        key: currentCom.key,
+        alignCenter: true, // 松手居中
+        props: {},
+      },
+    ],
+  };
+  currentCom = null;
+};
+```
+
+```js
+const reset = () => {
+  if (!props.block) {
+    state.editData = JSON.parse(JSON.stringify(props.data.container));
+  } else {
+    // 点击渲染模块实现默认配置数据
+    state.editData = JSON.parse(JSON.stringify(props.block));
+  }
+};
+
+input: () => <ElInput v-model={state.editData.props[propName]}></ElInput>;
+```
+
+- 3）将配置好的属性渲染到对应的渲染模块实现效果
+
+```js
+// editor-blocks.js
+// 添加渲染数据
+const RenderComponent = component.render({
+  props: props.block.props,
+});
+
+// utils/editor-config.js
+// 注册时render动态加入传参
+registerConfig.register({
+  label: "文本",
+  render: (props) => {
+    const prop = props.props;
+    return (
+      <span style={{ color: prop.color, fontSize: prop.size }}>
+        {props.text || "渲染文本"}
+      </span>
+    );
+  },
+});
+
+registerConfig.register({
+  label: "按钮",
+  render: (props) => {
+    const prop = props.props;
+    return (
+      <ElButton type={prop.type} size={prop.size}>
+        {props.text || "渲染按钮"}
+      </ElButton>
+    );
+  },
+});
+```
+
+**重置、应用功能**
+
+- 1）添加点击事件
+
+```jsx
+<ElButton type="primary" onClick={() => apply()}>
+  应用
+</ElButton>
+<ElButton onClick={() => reset()}>重置</ElButton>
+```
+
+```js
+const reset = () => {
+  if (!props.block) {
+    // 绑定data.json中的容器的宽高
+    state.editData = JSON.parse(JSON.stringify(props.data.container));
+  } else {
+    state.editData = JSON.parse(JSON.stringify(props.block));
+  }
+};
+const apply = () => {
+  if (!props.block) {
+    // 更改容器组件大小
+    props.updateContainer({ ...props.data, container: state.editData });
+  } else {
+    // 更改组件属性
+    props.updateBlock(state.editData, props.block);
+  }
+};
+```
+
+### 输入框双向绑定
+
+> 默认匹配{username: 'aaa', password: 123}
+
+```js
+const RenderComponent = component.render({
+  props: props.block.props,
+  model: Object.keys(component.model || {}).reduce((prev, modelName) => {
+    let propName = props.block.model[modelName];
+    prev[modelName] = {
+      modelValue: props.formData[propName],
+      // eslint-disable-next-line vue/no-mutating-props
+      "onUpdate:modelValue": (v) => (props.formData[propName] = v),
+    };
+    return prev;
+  }, {}),
+});
+```
+
+```js
+registerConfig.register({
+  label: "输入框",
+  preview: () => <ElInput placeholder="预览输入框"></ElInput>,
+  render: ({ model }) => {
+    return <ElInput placeholder="请输入渲染框" {...model}></ElInput>;
+  },
+  key: "input",
+  model: {
+    defalut: "绑定字段",
+  },
+});
+```
+
+### 下拉框
+
+#### 注册设置
+
+```js
+registerConfig.register({
+  label: "下拉框",
+  key: "select",
+  preview: () => <ElSelect modelValue=""></ElSelect>,
+  render: ({ props, model }) => {
+    return (
+      <ElSelect {...model.default}>
+        {(props.options || []).map((opt, index) => {
+          return (
+            <ElOption
+              label={opt.label}
+              value={opt.value}
+              key={index}></ElOption>
+          );
+        })}
+      </ElSelect>
+    );
+  },
+  props: {
+    options: createTableProp("下拉选项", {
+      options: [
+        { label: "显示值", field: "label" },
+        { label: "绑定值", field: "value" },
+      ],
+      key: "label", // 显示给用户的值
+    }),
+  },
+  model: {
+    default: "绑定字段",
+  },
+});
+```
+
+#### 渲染 table
+
+```js
+table: () => (
+  <TableEditor
+    propConfig={propConfig}
+    v-model={state.editData.props[propName]}></TableEditor>
+);
+```
+
+```js
+// 组件table-editor数据的设置
+// table-editor props
+props: {
+  propConfig: { type: Object },
+  modelValue: { type: Array },
+}
+const data = computed({
+  get() {
+    return props.modelValue || [];
+  },
+  set(newval) {
+    ctx.emit("update:modelValue", JSON.parse(JSON.stringify(newval)));
+  },
+});
+```
+
+```js
+// dialog配置
+$tableDialog({
+  config: props.propConfig,
+  data: data.value,
+  onConfirm(v) {
+    data.value = v;
+  },
+});
+```
+
+**dialog 组件封装**
+
+> 原生虚拟节点创建、挂载、渲染
+
+```js
+let vm;
+export const $tableDialog = (option) => {
+  if (!vm) {
+    const el = document.createElement("div");
+    vm = createVNode(TableComponent, { option });
+    let r = render(vm, el);
+    document.body.appendChild((r, el));
+  }
+  let { show } = vm.component.exposed;
+  show(option);
+};
+```
+
+> dialog 包 table 封装，
+> 涉及 v3 插槽：渲染函数默认插槽 default
+
+```js
+const TableComponent = defineComponent({
+  props: {
+    option: { type: Object },
+  },
+  setup(props, ctx) {
+    // 响应式数据
+    const state = reactive({
+      option: props.option,
+      isShow: false,
+      editData: [],
+    });
+    let methods = {
+      show(option) {
+        state.option = option;
+        state.isShow = true;
+        state.editData = JSON.parse(JSON.stringify(option.data));
+      },
+    };
+    ctx.expose(methods);
+    const add = () => {
+      state.editData.push({});
+    };
+    const onCancel = () => {
+      state.isShow = false;
+    };
+    const onConfirm = () => {
+      state.option.onConfirm(state.editData);
+      state.isShow = false;
+    };
+    return () => {
+      return (
+        <ElDialog v-model={state.isShow} title={state.option.config.label}>
+          {{
+            default: () => (
+              <div>
+                <div>
+                  <ElButton onClick={add}>添加</ElButton>
+                  <ElButton>重置</ElButton>
+                </div>
+                <ElTable data={state.editData}>
+                  <ElTableColumn
+                    label="序号"
+                    type="index"
+                    width="60"></ElTableColumn>
+                  {state.option.config.table.options.map((item) => {
+                    return (
+                      <ElTableColumn label={item.label}>
+                        // 插槽
+                        {{
+                          default: ({ row }) => (
+                            <ElInput v-model={row[item.field]}></ElInput>
+                          ),
+                        }}
+                      </ElTableColumn>
+                    );
+                  })}
+                  <ElTableColumn label="操作">
+                    <ElButton type="danger">删除</ElButton>
+                  </ElTableColumn>
+                </ElTable>
+              </div>
+            ),
+            footer: () => (
+              <>
+                <ElButton onClick={onCancel}>取消</ElButton>
+                <ElButton onClick={onConfirm}>确定</ElButton>
+              </>
+            ),
+          }}
+        </ElDialog>
+      );
+    };
+  },
+});
+```
+
+### 组件的放大缩小功能

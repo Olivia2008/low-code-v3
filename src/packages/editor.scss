@@ -137,3 +137,57 @@
   user-select: none;
   cursor: pointer;
 }
+.range {
+  display: inline-flex;
+  width: 220px;
+  min-height: 30px;
+  align-items: center;
+  input {
+    flex: 1;
+    width: 100%;
+  }
+  span {
+    margin: 0 4px;
+    display: inline-flex;
+  }
+}
+.block-resize {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #337ecc;
+  z-index: 2000;
+  user-select: none;
+}
+.block-resize-top {
+  top: -4px;
+  left: calc(50% + -4px);
+}
+.block-resize-bottom {
+  top: -4px;
+  left: calc(50% + -4px);
+}
+.block-resize-right {
+  top: calc(50% + -4px);
+  right: -4px;
+}
+.block-resize-left {
+  top: calc(50% + -4px);
+  left: -4px;
+}
+.block-resize-top-left {
+  top: -4px;
+  left: -4px;
+}
+.block-resize-top-right {
+  top: -4px;
+  right: -4px;
+}
+.block-resize-bottom-left {
+  bottom: -4px;
+  left: -4px;
+}
+.block-resize-bottom-right {
+  bottom: -4px;
+  right: -4px;
+}

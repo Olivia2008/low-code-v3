@@ -7,9 +7,11 @@ import { useBlockDragger } from "./useBlockDragger";
 import { useCommand } from "./useCommand";
 import { $dialog } from "../components/dialog";
 import { $dropDown, DropdownItem } from "../components/dropDown";
+import EditorOperator from "./editor-operator";
 export default defineComponent({
   props: {
     modelValue: { type: Object },
+    formData: { type: Object },
   },
   emits: ["update:modelValue"],
   setup(props, ctx) {
@@ -175,7 +177,8 @@ export default defineComponent({
             {data.value.blocks.map((item) => (
               <EditorBlock
                 class="editor-block-preview"
-                block={item}></EditorBlock>
+                block={item}
+                formData={props.formData}></EditorBlock>
             ))}
             <ElButton type="primary" onClick={() => (edtionRef.value = true)}>
               返回
@@ -210,7 +213,13 @@ export default defineComponent({
               );
             })}
           </div>
-          <div className="editor-right">属性控制栏目</div>
+          <div className="editor-right">
+            <EditorOperator
+              block={lastSelectBlock.value}
+              data={data.value}
+              updateContainer={commands.updateContainer}
+              updateBlock={commands.updateBlock}></EditorOperator>
+          </div>
           {/* 滚动条 */}
           <div className="editor-container">
             {/* 内容区 */}
@@ -231,9 +240,8 @@ export default defineComponent({
                     }
                     block={item}
                     onMousedown={(e) => blockMouseDown(e, item, index)}
-                    onContextmenu={(e) =>
-                      onRightClickMenu(e, item)
-                    }></EditorBlock>
+                    onContextmenu={(e) => onRightClickMenu(e, item)}
+                    formData={props.formData}></EditorBlock>
                 ))}
                 {markLine.x !== null && (
                   <div class="line-x" style={{ left: markLine.x + "px" }}></div>
